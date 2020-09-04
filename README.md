@@ -2,6 +2,18 @@
 
 Repository for Skidmore's Fall 2020 class: Statistics in Sports
 
+## 9/4/20
+
+HW 1 due
+
+Lab 2: Baseball Statistics
+
+## 9/6/20
+
+Lecture 2: Baseball statistics and what makes a metric?
+
+Coding: correlation in MLB
+
 ## 8/28/20
 
 Review Markdown, class expectations
