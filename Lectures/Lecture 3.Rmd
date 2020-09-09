@@ -1,0 +1,142 @@
+---
+title: 'Lecture 3: Baseball stats & Multivariate regression'
+author: "Skidmore College"
+output: beamer_presentation
+fontsize: 10pt
+---
+
+
+## Multivariate regression
+
+Model: 
+
+$y_i = \beta_0 + \beta_1*x_{i1} + \beta_2*x_{i2} + \ldots + \beta_{p-1}*x_{i,p-1} + \epsilon_i$
+
+
+Assumptions: 
+
+- $\epsilon_i \sim N(0, \sigma^2)$
+- $\epsilon_i$,$\epsilon_{i'}$ independent for all $i, i'$
+- Linear relationship between $y$ and $x$
+
+## Multivariate regression
+
+Estimated model:  
+  
+$\hat{y_i} = \hat{\beta_0} + \hat{\beta_1}*x_{i1} + \hat{\beta_2}*x_{i2} + \ldots + \hat{\beta_{p-1}}*x_{i,p-1}$ 
+
+Interpretations:
+
+- $\hat{\beta_0}$: 
+- $\hat{\beta_1}$: 
+
+
+## Ex: Runs against (RA) 
+
+```{r, message = FALSE, warning = FALSE, fig.height=2, fig.width=3}
+library(tidyverse)
+library(Lahman)
+Teams.1 <- Teams %>% filter(yearID >= 1970)
+fit.pitcher <- lm(RA ~ HRA + BBA + SOA + lgID, data = Teams.1)
+```
+
+Write the multiple regression model: 
+
+
+
+
+## Ex: Runs against (RA) 
+
+```{r}
+library(broom)
+tidy(fit.pitcher)  ### alternatively, use summary(fit.pitcher)
+```
+
+Write the estimated multiple regression model
+
+
+## Ex: Runs against (RA) 
+
+```{r}
+tidy(fit.pitcher)
+```
+
+Interpret the slope for `SOA`. Interpret the intercept
+
+
+## Ex: Runs against (RA) 
+
+```{r}
+tidy(fit.pitcher)
+```
+
+Interpret the slope for `lgID`. 
+
+
+## Assumptions
+
+Model: 
+
+$y_i = \beta_0 + \beta_1*x_{i1} + \beta_2*x_{i2} + \ldots + \beta_{p-1}*x_{i,p-1} + \epsilon_i$
+
+
+Assumptions: 
+
+- $\epsilon_i \sim N(0, \sigma^2)$
+- $\epsilon_i$,$\epsilon_{i'}$ independent for all $i, i'$
+- Linear relationship between $y$ and $x$
+
+
+## Ex: Runs against (RA) 
+
+```{r, fig.height=3, fig.width=3}
+qqnorm(fit.pitcher$resid)
+```
+
+## Conclusions from the model
+
+
+
+## Open ended question 1
+
+Write the following model, and interpret the coefficients 
+
+```{r}
+fit.offense <- lm(R ~ X2B + X3B + lgID, data = Teams.1)
+tidy(fit.offense)
+```
+
+
+## Open ended question 2
+
+What does the following plot say about the multiple regression model in Open Ended question 1?
+
+```{r, fig.height=2, fig.width=3}
+ggplot(Teams.1, aes(X3B, R)) + 
+  geom_point() + 
+  geom_smooth()
+```
+
+
+## Open ended question 3
+
+What does the following plot say about the multiple regression model in Open Ended question 1?
+
+```{r, fig.height=2, fig.width=3}
+ggplot(Teams.1, aes(X2B, R)) + 
+  geom_point() + 
+  geom_smooth()
+```
+
+
+## Open ended question 4
+
+What does the following plot say about the multiple regression model in Open Ended question 1?
+
+```{r, fig.height=3, fig.width=3}
+qqnorm(fit.offense$resid)
+``` 
+
+## Open ended question 5
+
+Find another variable that's a significant predictor of Runs -- does it change the coefficients on the variables currently in the model?
