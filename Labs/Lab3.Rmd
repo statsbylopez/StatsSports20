@@ -17,6 +17,49 @@ Improve with the following commands in live coding
 2. `summarize()`
 3. `mutate()`
 
+Sample analysis from class
+
+```{r, eval = FALSE}
+library(Lahman)
+library(tidyverse)
+
+HallOfFame %>% head()
+
+### Track counts of categorical variables
+HallOfFame %>% count(category)
+
+### Random sample of rows
+HallOfFame %>% sample_n(6)
+
+HallOfFame %>% count(inducted)
+
+### Question 1: Total number of people inducted in each year
+HallOfFame %>% count(yearID, inducted)  ## counts of year/induction status that exist
+
+summary_elect_year <- HallOfFame %>% 
+  group_by(yearID) %>% 
+  summarise(number_inducted = sum(inducted == "Y"))
+
+### Two equals signs: asking a question if inducted = "Y"
+
+ggplot(data = summary_elect_year, aes(number_inducted)) + 
+  geom_histogram(binwidth = 1)
+
+## What happened with the outlier?
+summary_elect_year %>% arrange(-number_inducted)
+
+ggplot(data = summary_elect_year, aes(x = yearID, y = number_inducted)) + 
+  geom_point() + 
+  geom_line() ## connect points with a line
+
+
+```
+
+
+
+
+
+
 ## Overview
 
 In this lab, we'll learn model comparison tools using multivariate regression. Next, we'll apply our tools to derive predictions of pitcher performance. 
