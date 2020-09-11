@@ -2,6 +2,19 @@
 
 Repository for Skidmore's Fall 2020 class: Statistics in Sports
 
+## 9/11/20
+
+HW 2 due
+
+Lab: dplyr, regression, residuals, and prediction
+
+## 9/9/20
+
+Lecture 3: Multiple/multivariable regression in baseball
+
+Coding: Residual plots and regression output
+
+
 ## 9/4/20
 
 HW 1 due
