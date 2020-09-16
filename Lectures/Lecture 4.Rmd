@@ -1,0 +1,203 @@
+---
+title: 'Lecture 4: Prediction and model selection in MLB'
+author: "Skidmore College"
+output: beamer_presentation
+fontsize: 9pt
+---
+
+## Intro/review
+
+```{r, message = FALSE, warning = FALSE}
+library(tidyverse); library(Lahman); options(digits = 4)
+set.seed(0)
+Pitching %>% 
+  select(playerID, yearID, W, L, H, BB, SO, BFP, ERA) %>% 
+  sample_n(5)
+```
+
+
+## Preliminary questions
+
+Write code to 
+
+(i) Filter pitchers with at least 500 batters faced in a season that came in the year 2000 or after
+
+(ii) Make a new variable, `bb_rate`, to represent the percent of batters faced that each pitcher walks
+
+(iii) Identify the players with the most wins in a season in the data set
+
+(iv) Identify the players with the most total wins across the data set
+
+(v) Find the team whose pitchers allowed the most home runs between 2010 and 2019
+
+
+## Multivariate regression
+
+Model: 
+
+$y_i = \beta_0 + \beta_1*x_{i1} + \beta_2*x_{i2} + \ldots + \beta_{p-1}*x_{i,p-1} + \epsilon_i$
+
+
+Assumptions: 
+
+- $\epsilon_i \sim N(0, \sigma^2)$
+- $\epsilon_i$,$\epsilon_{i'}$ independent for all $i, i'$
+- Linear relationship between $y$ and $x$
+
+Estimated model:  
+  
+$\hat{y_i} = \hat{\beta_0} + \hat{\beta_1}*x_{i1} + \hat{\beta_2}*x_{i2} + \ldots + \hat{\beta_{p-1}}*x_{i,p-1}$ 
+
+
+
+## How to pick the best model
+
+0. Scatter plots
+
+1. R-squared, R-squared adjusted, p-value cutoffs (x)
+
+2. AIC
+
+3. MAE/MSE
+
+4. Check model assumptions
+
+
+## MLB pitcher prediction
+
+```{r, message = FALSE, warning = FALSE}
+Pitching <- Pitching %>% 
+  filter(yearID >= 2000, BFP >= 500) %>% 
+  mutate(K_rate = SO/BFP, 
+         BB_rate = BB/BFP, 
+         HR_rate = HR/BFP, 
+         FIP = ((13*HR) + 5*(H - HR)  + 3*(BB + HBP) - 2*SO)/(IPouts)) 
+
+fit_pitcher_1 <- lm(ERA ~ K_rate + BB_rate + lgID + BK, data = Pitching)
+fit_pitcher_2 <- lm(ERA ~ K_rate + BB_rate + lgID, data = Pitching)
+```
+
+Write the multiple regression model: 
+
+
+
+## MLB pitcher prediction
+
+```{r, message = FALSE, warning = FALSE}
+library(broom)
+tidy(fit_pitcher_1)  ### alternatively, use summary(fit.pitcher)
+```
+
+Write the estimated multiple regression model
+
+
+## Which model is best?
+
+```{r, message = FALSE, warning = FALSE}
+summary(fit_pitcher_1)$r.squared
+summary(fit_pitcher_2)$r.squared
+```
+
+
+```{r, message = FALSE, warning = FALSE}
+summary(fit_pitcher_1)$adj.r.squared
+summary(fit_pitcher_2)$adj.r.squared
+```
+
+## AIC
+
+```{r, message = FALSE, warning = FALSE}
+AIC(fit_pitcher_1)
+AIC(fit_pitcher_2)
+```
+
+What is AIC?
+
+What does AIC say about these two models?
+
+
+## Setting up next year
+
+```{r, message = FALSE, warning = FALSE}
+Pitching <- Pitching %>% 
+  arrange(playerID, yearID) %>% 
+  mutate(K_rate_next = lead(K_rate, 1)) 
+```
+
+Why predict next year?
+
+## Steps to model selection
+
+1. Fit plausible models
+
+2. Contrast AIC, pick lowest performing model. If different models have similar AICs, err on the side of parsimony
+
+3. Consider prediction errors using MSE and MAE
+
+
+## Step 1: fit plausible models
+
+```{r}
+fit_next_yr_1 <- lm(K_rate_next ~ K_rate, data = Pitching)
+fit_next_yr_2 <- lm(K_rate_next ~ K_rate + HR_rate, data = Pitching)
+fit_next_yr_3 <- lm(K_rate_next ~ K_rate + HR_rate + lgID, data = Pitching)
+fit_next_yr_4 <- lm(K_rate_next ~ K_rate + FIP, data = Pitching)
+fit_next_yr_5 <- lm(K_rate_next ~ K_rate + BB_rate, data = Pitching)
+```
+
+## Step 2: AIC to get started
+
+```{r}
+AIC(fit_next_yr_1)
+AIC(fit_next_yr_2)
+AIC(fit_next_yr_3)
+AIC(fit_next_yr_4)
+AIC(fit_next_yr_5)
+```
+
+
+## Coding best estimates for future performance
+
+```{r}
+Pitching <- Pitching %>% 
+  mutate(p1_krate = predict(fit_next_yr_1, Pitching), 
+         p2_krate = predict(fit_next_yr_2, Pitching), 
+         p3_krate = predict(fit_next_yr_3, Pitching), 
+         p4_krate = predict(fit_next_yr_4, Pitching), 
+         p5_krate = predict(fit_next_yr_5, Pitching))
+head(Pitching) %>% select(K_rate_next, p1_krate:p5_krate)
+```
+
+## Visualizations of model predictions
+
+```{r, message = FALSE, warning = FALSE, fig.height=2, fig.width=3}
+ggplot(data = Pitching, aes(p1_krate, K_rate_next)) + 
+  geom_point()
+```
+
+## Metrics for accuracy
+
+```{r}
+Pitching %>% 
+  filter(!is.na(K_rate_next)) %>% 
+  summarise(mae_p1 = mean(abs(p1_krate - K_rate_next)), 
+            mae_p2 = mean(abs(p2_krate - K_rate_next)), 
+            mae_p3 = mean(abs(p3_krate - K_rate_next)), 
+            mae_p4 = mean(abs(p4_krate - K_rate_next)), 
+            mae_p5 = mean(abs(p5_krate - K_rate_next)))
+```
+
+## Metrics for accuracy
+
+
+```{r}
+Pitching %>% 
+  filter(!is.na(K_rate_next)) %>% 
+  summarise(mse_p1 = mean((p1_krate - K_rate_next)^2), 
+            mse_p2 = mean((p2_krate - K_rate_next)^2), 
+            mse_p3 = mean((p3_krate - K_rate_next)^2), 
+            mse_p4 = mean((p4_krate - K_rate_next)^2), 
+            mse_p5 = mean((p5_krate - K_rate_next)^2))
+```
+
+
