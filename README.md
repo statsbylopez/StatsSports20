@@ -2,6 +2,20 @@
 
 Repository for Skidmore's Fall 2020 class: Statistics in Sports
 
+## 9/18/20
+
+HW 3 due
+
+Lab: Quadratic terms, MAE/MSE, AIC
+
+Review lecture notes from Weds
+
+## 9/16/20
+
+Hand-coding at start of class
+
+AIC and model selection (start of notes)
+
 ## 9/11/20
 
 HW 2 due
