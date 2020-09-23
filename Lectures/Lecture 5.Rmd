@@ -1,0 +1,212 @@
+---
+title: 'Lecture 5: Logistic regression & NFL kickers'
+author: "Skidmore College"
+output: beamer_presentation
+fontsize: 10pt
+---
+
+## Preamble:
+
+
+\footnotesize
+
+```{r, warning = FALSE, message = FALSE}
+library(tidyverse)
+nfl_kick <- read.csv("https://raw.githubusercontent.com/statsbylopez/StatsSports/master/Data/nfl_fg.csv")
+head(nfl_kick)
+```
+
+## Warm-Ups 1/2
+
+- Identify the longest field goal kicked by each kicker
+
+- Identify the rate of successful field goals in each season
+
+## Warm ups 3/4
+
+- Surfaces with Grass == `FALSE` occur on turf. What is the rate of field goals made on each surface?
+
+- Identify the rate of successful field goals kicked between 48 and 52 yards
+
+
+## Review: multivariate linear regression
+
+Model: 
+
+$y_i = \beta_0 + \beta_1*x_{i1} + \beta_2*x_{i2} + \ldots + \beta_{p-1}*x_{i,p-1} + \epsilon_i$
+
+
+Assumptions: 
+
+- $\epsilon_i \sim N(0, \sigma^2)$
+- $\epsilon_i$,$\epsilon_{i'}$ independent for all $i, i'$
+- Linear relationship between $y$ and $x$
+
+## Example: NFL kickers
+
+\footnotesize
+
+```{r, warning = FALSE, message = FALSE}
+library(tidyverse)
+nfl_kick <- read.csv("https://raw.githubusercontent.com/statsbylopez/StatsSports/master/Data/nfl_fg.csv")
+head(nfl_kick)
+```
+
+## Example: NFL kickers
+
+\small
+
+```{r, fig.width=5, fig.height=3.2}
+fit_0 <- lm(Success ~ Distance, data = nfl_kick)
+ggplot(data = nfl_kick, aes(Distance, Success)) + 
+  geom_jitter()
+```
+
+What are the problems?
+
+
+
+## Example: NFL kickers
+
+\small
+
+```{r, fig.width=6, fig.height=3.6}
+fit_0 <- lm(Success ~ Distance, data = nfl_kick)
+qqnorm(fit_0$resid)
+```
+
+What are the problems?
+
+
+
+## Logistic regression model
+
+Model:  $log(\frac{P(y = 1)}{1-P(y = 1)}) = \beta_0 + \beta_1*x_{1} + \beta_2*x_{2} + \ldots + \beta_{p-1}*x_{p-1}$
+
+Comments: 
+
+- Dependent variable: log-odds 
+    - What are odds?
+  
+- Model checks more complex 
+    
+
+- Uses $z$ test statistics for parameters
+
+
+## Logistic regression model
+
+Model:  $log(\frac{P(y = 1)}{1-P(y = 1)}) = \beta_0 + \beta_1*x_{1}$
+
+Extract probabilities:
+
+- $P(y = 1)$:
+
+
+
+
+## Estimated logistic regression model
+
+Estimated model: $log(\frac{P(y = 1)}{1-P(y = 1)}) = \hat{\beta_0} + \hat{\beta_1}*x_{1} + \hat{\beta_2}*x_{2} + \ldots + \hat{\beta_{p-1}}*x_{p-1}$
+
+Slope interpretation: 
+
+- $\hat{\beta_1}$: 
+
+- $e^{\hat{\beta_1}}$:
+
+
+## Ex: Field goal kicking by distance
+
+\footnotesize
+
+Model: $log(\frac{P(Success = 1)}{1-P(Success = 1)}) = \beta_0 + \beta_1*Distance$
+
+
+```{r}
+library(broom)
+fit_1 <- glm(Success ~ Distance, data = nfl_kick, family = "binomial")
+tidy(fit_1)
+```
+
+Slope interpretation: $e^{\hat{\beta_1}}$
+
+## Ex: Field goal kicking by distance
+
+\footnotesize
+
+```{r}
+tidy(fit_1)
+```
+
+Estimate the probability of a successful 50-yard field goal:
+
+
+## Ex: Field goal kicking by distance
+
+\footnotesize
+
+```{r}
+tidy(fit_1)
+```
+
+Estimate the probability of a successful 51-yard field goal:
+
+
+## Ex: Field goal kicking by distance
+
+
+
+Use your answers on the previous slides to estimate the odds of a 51-yard field goal relative to the odds of a 50-yard field goal. Where else do you see this number?
+
+
+
+## Model checking 
+
+- Model checking for logistic regression relies on assessment of fit
+    - Are the predicted probabilities accurate?
+    - Ex: 48 to 52 yard field goals
+
+\footnotesize
+
+```{r}
+long_FG <- filter(nfl_kick, Distance >= 48, Distance <= 52)
+long_FG %>% 
+  summarise(ave_success = mean(Success))
+```
+
+## Categorical predictors
+
+\footnotesize
+
+```{r}
+fit_2 <- glm(Success ~ Distance + Grass, 
+             data = nfl_kick, family = "binomial")
+tidy(fit_2)
+```
+
+Estimated model
+
+
+## Categorical predictors
+
+
+```{r}
+tidy(fit_2)
+```
+
+
+Slope interpretation: $e^{\hat{\beta_1}}$
+
+
+
+## Categorical predictors
+
+
+```{r}
+tidy(fit_2)
+```
+
+
+Slope interpretation: $e^{\hat{\beta_2}}$
+
