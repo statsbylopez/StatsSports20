@@ -2,6 +2,18 @@
 
 Repository for Skidmore's Fall 2020 class: Statistics in Sports
 
+## 10/2/20 
+
+Exam 1
+
+## 9/30/20
+
+Logistic Regression review
+
+## 9/23/20 and 9/25/20
+
+Logistic regression and logistic regression lab
+
 ## 9/18/20
 
 HW 3 due
