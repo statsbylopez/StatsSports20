@@ -23,7 +23,7 @@ dim(pbp_20)
 pbp_scrimmage <- pbp_20 %>% 
   select(game_id, posteam, defteam, play_type, play_id, down, ydstogo, yardline_100, home_score, away_score, ep, epa, rusher_player_name, 
          passer_player_name, receiver_player_name, air_yards, complete_pass, desc)  %>% 
-  filter(play_type == "pass"|play_type == "rush")
+  filter(play_type == "pass"|play_type == "run")
 
 
 set.seed(10)
