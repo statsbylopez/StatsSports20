@@ -23,7 +23,7 @@ dim(pbp_20)
 pbp_scrimmage <- pbp_20 %>% 
   select(game_id, posteam, defteam, play_type, play_id, down, ydstogo, yardline_100, home_score, away_score, ep, epa, rusher_player_name, 
          passer_player_name, receiver_player_name, air_yards, complete_pass, desc)  %>% 
-  filter(play_type == "pass"|play_type == "run", air_yards >= -10)
+  filter(play_type == "pass"|play_type == "rush")
 
 
 set.seed(10)
@@ -58,7 +58,7 @@ A similar metric can be used with players at each position. Let's look with quar
 
 ```{r, eval = FALSE}
 passes <- pbp_scrimmage %>% 
-  filter(play_type == "pass", !is.na(air_yards))
+  filter(play_type == "pass", !is.na(air_yards), air_yards >= -10)
 
 passes %>% 
   group_by(passer_player_name) %>% 
