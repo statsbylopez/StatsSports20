@@ -1,0 +1,337 @@
+---
+title: 'Lecture 8: Steins paradox and hockey shooting statistics'
+author: "Skidmore College"
+output: beamer_presentation
+fontsize: 10pt
+---
+
+```{r knitr_options , include=FALSE}
+#Here's some preamble, which makes ensures your figures aren't too big
+knitr::opts_chunk$set(fig.width=6, fig.height=4.6, warning=FALSE,
+message=FALSE)
+```
+
+## Goals
+
+- Stein's Paradox
+
+- Shooting Percentages in hockey
+
+- Tools: Bayesian statistics, likelihood estimation, bias/variance
+
+
+
+## Set-up: 
+
+We are NHL general managers after the 2012-2013 season. Who are we going to sign? Assume all else is equal (same contract, same stats), here are two players in the 2012-13 season.
+
+
+Player         Goals
+-------       ------ 
+David Krejci    17        
+Evgeni Malkin    7
+
+
+
+## Set-up: 
+
+We are NHL general managers after the 2012-2013 season. Who are we going to sign? 
+
+Player         Goals       Shots       Shooting \%
+-------       ------      ------      ------------
+David Krejci    17         106          16.0\%
+Evgeni Malkin    7         101          6.9\%
+
+Why does this information matter?
+
+
+## Set-up: 
+
+We are NHL general managers after the 2012-2013 season. Who are we going to sign? 
+
+Player             Goals       Shots       Shooting \%
+-------           ------      ------      ------------
+David Krejci (C)     17         106          16.0\%
+Evgeni Malkin (C)    7          101          6.9\%
+
+Information we want:
+
+- What shooting percentages can we expect for Krejci and Malkin going forward?
+
+Statistical definitions:
+
+- Bias vs. Unbiased, Bias/Variance trade-off, James-Stein estimator
+
+
+
+## Interlude: 
+
+Let's say we are interested in the overall fraction of the Skidmore students that will support a football team, $p_0$. In a completely randomized survey of 100 students, 22\% of the Skidmore campus supports the adoption of a football team. 
+
+- Our sample statistic, $\hat{p} = 0.22$, is **unbiased** for $p_0$ because $E[\hat{p}] = p_0$. 
+
+- That is, our best guess as to the true fraction of the Skidmore students that support a football team is 22\%. If we had one guess, that's it. 
+
+- *Note*: $\hat{p} = 0.22$ is biased for $p_0$ if $E[\hat{p}] \neq p_0$
+
+## Back to hockey
+
+Player             Goals       Shots       Shooting \%
+-------           ------      ------      ------------
+David Krejci (C)     17         106          16.0\%
+Evgeni Malkin (C)    7          101          6.9\%
+
+- Let $p_K$ and $p_M$ are the true probabilities that a Krejci or Malkin shot will score a goal, respectively
+
+- What are our estimates of $p_K$ and $p_M$?
+
+    - $\hat{p}_{K} = 0.160$ is unbiased for $p_K$ ($E[\hat{p}_K] = p_K$)
+    
+    - $\hat{p}_{M} = 0.069$ is unbiased for $p_M$ ($E[\hat{p}_M] = p_M$)
+
+- *Note*: $\hat{p}_{M}$ and $\hat{p}_{K}$ are called maximum likelihood estimators 
+
+
+## Back to hockey
+
+
+Player             Goals       Shots       Shooting \%
+-------           ------      ------      ------------
+David Krejci (C)     17         106          16.0\%
+Evgeni Malkin (C)    7          101          6.9\%
+
+What other information could we use? 
+
+- League-wide shooting percentage for forwards is 10.6\%
+
+- How do we incorporate this information?
+
+## James-Stein estimator
+
+Via Efron \& Morris, \centering $z = \bar{y} + c(y - \bar{y})$,
+    
+    
+- $\bar{y}$ is grand average of averages
+    
+- $y$ is average of a single data set
+    
+- c is a shrinking factor, $c = \frac{N/0.25}{N/0.25 + 1/\sigma^2}$
+
+    - $N$ is number of observations we have on a player
+    - $\sigma^2$ is variance of observations from one player to the next
+
+
+
+    
+    
+## James-Stein estimator, translated
+
+Via Efron \& Morris, \centering $\hat{p}_{JS} = \bar{\hat{p}} + c*(\hat{p} - \bar{\hat{p}})$,
+    
+    
+- $\bar{\hat{p}}$ is average of each players shooting percentage
+    
+- $\hat{p}$ is a single players observation
+    
+- c is a shrinking factor, $c = \frac{N/0.25}{N/0.25 + 1/\sigma^2}$
+
+    - $k$ is number of shooters
+    - $\sigma^2$ is variance of individual shooter given certain number of attempts
+
+- Plug in $c = 1$: 
+- Plug in $c = 0$:          
+    
+    
+    
+## James-Stein estimator, translated
+
+Via Efron \& Morris, \centering $\hat{p}_{JS} = \bar{\hat{p}} + c*(\hat{p} - \bar{\hat{p}})$,
+    
+    
+- $\bar{\hat{p}}$ is average of each players shooting percentage
+    
+- $\hat{p}$ is a single players observation
+    
+- c is a shrinking factor, $c = \frac{N/0.25}{N/0.25 + 1/\sigma^2}$
+
+    - $k$ is number of shooters
+    - $\sigma^2$ is variance of individual shooter given certain number of attempts
+    
+
+- What happens as $\sigma^2$ goes up/down?
+
+
+
+## James-Stein estimator, implemented
+
+\footnotesize
+
+- Initial data: shooting statistics from the 2012-2013 season
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+library(RCurl); library(tidyverse)
+url <- getURL("https://raw.githubusercontent.com/statsbylopez/StatsSports/master/Data/NHL.csv")
+nhl_data <- read_csv(url)
+nhl_data <- nhl_data %>% filter(TOI > 500)
+nhl_data <- na.omit(nhl_data)
+nhl_data$ShP <- nhl_data$Goals/nhl_data$Shots
+nhl_data %>% slice(1:2) %>% 
+  select(Name:Assists, Shots, ShP)
+```
+
+```{r}
+first_season <- nhl_data %>% filter(Season == 20122013)
+first_players <- first_season %>%
+  group_by(Name) %>%
+  filter(Shots <= 106, Shots >= 100, Position !="D") %>%
+  select(Name, Position, Goals, Shots, ShP) 
+dim(first_players)
+```    
+    
+    
+## James-Stein estimator, implemented
+
+\footnotesize
+
+```{r}
+head(first_players)
+```
+
+12 forwards, each with between 100-106 shots
+
+
+## James-Stein estimator, implemented
+
+\footnotesize
+
+```{r}
+p_bar <- mean(first_players$ShP)
+p_bar
+p_hat <- first_players$ShP
+p_hat
+```
+
+## James-Stein estimator, implemented
+
+
+\footnotesize
+
+```{r}
+N <- first_players$Shots
+N
+sigma_sq <- sd(p_hat)^2 ##Rough approximation
+sigma_sq
+```
+
+
+## James-Stein estimator, implemented
+
+\footnotesize
+
+```{r}
+c <- (N/0.25)/(N/0.25 + 1/sigma_sq)
+c
+```
+
+- Hockey shrinking factor after 100-105 shots: c = 0.45
+
+- How to interpret c? 
+
+
+## James-Stein estimator, implemented
+
+\footnotesize
+
+Calculating the MLE and James-Stein estimates
+
+```{r}
+first_players$Shp_MLE <- first_players$ShP
+first_players$Shp_JS <- p_bar + c*(p_hat - p_bar)
+head(first_players)
+```
+
+
+
+
+## James-Stein estimator, implemented
+
+How to judge estimation accuracy? 
+
+- Let's compare to career shooting percentage through March, 2016
+- Each player with at least 200 shots
+- In principle, a player's career \% represents something closer to the truth (his true \%)
+
+
+```{r, echo = FALSE}
+all_players <- nhl_data %>%
+  group_by(Name) %>%
+  filter(Name %in% first_players$Name, Season >= 20122013) %>%
+  summarise(Shp_Career = sum(Goals)/sum(Shots), n.shots = sum(Shots))
+first_players1 <- inner_join(first_players, all_players) %>%
+  select(Name, ShP, Shp_MLE, Shp_JS, Shp_Career)
+first_players1[,2:5] <- round(first_players1[,2:5], 3)
+```
+
+
+
+
+## Comparing the estimates
+
+*Mean absolute error*
+
+```{r}
+first_players1[1:3,]
+```
+
+
+
+## Comparing the estimates
+
+```{r}
+first_players1 %>% 
+  ungroup() %>% 
+  mutate(abs_error_mle = abs(Shp_MLE - Shp_Career), 
+         abs_error_js = abs(Shp_JS - Shp_Career)) %>% 
+  summarise(mae_mle = mean(abs_error_mle), 
+            mae_js = mean(abs_error_js))
+```
+
+How'd we do? How to interpret these numbers?
+
+
+
+## Visualizing the J-S estimator
+
+```{r, echo = FALSE}
+first_players1 %>% 
+  gather(shot_type, shot_rate, Shp_MLE:Shp_Career) %>% 
+  ggplot(aes(x = rev(shot_type), y = shot_rate, group = Name, colour = Name)) + 
+  geom_line() + 
+  geom_point() + 
+  scale_colour_discrete(guide = FALSE) + 
+  scale_x_discrete(labels = c("MLE", "J-S", "Career")) + 
+  geom_text(data = first_players1, aes(x = 0.2, y  = Shp_MLE, label = Name), hjust = 0) + xlab("Estimator") + ylab("Shooting pct") + 
+  theme_bw()
+```
+
+
+## Summary: 
+
+
+1.  **Stein's Paradox**: Circumstances in which there are estimators better than the arithmetic average
+  - `better` defined by accuracy (RMSE - plot this?)
+  - `better` estimators use combination of individual ones ($k \geq 3$)
+  - `better` than any method that handles the parameters separately.
+  
+2.  Bias/Variance trade-off: $\hat{p}_{JS}$ versus $\hat{p}$
+
+
+## Summary:
+
+4.  Can be tweaked for different sample sizes. 
+
+5.  Next step: intervals for future performance
+
+6.  Links to Bayesian statistics + empirical Bayes ([link](https://baseballwithr.wordpress.com/2016/02/15/revisiting-efron-and-morriss-baseball-study/))
+
+
