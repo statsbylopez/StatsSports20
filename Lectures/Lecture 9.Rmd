@@ -1,0 +1,171 @@
+---
+title: 'Lecture 10: Statistics in hockey/soccer'
+author: "Skidmore College"
+output: beamer_presentation
+fontsize: 10pt
+---
+
+```{r knitr_options , include=FALSE}
+#Here's some preamble, which makes ensures your figures aren't too big
+knitr::opts_chunk$set(fig.width=3.5, fig.height=2.3, warning=FALSE,
+message=FALSE)
+```
+
+## Goals
+
+- Multiple logistic regression
+
+- Score effects
+
+- Expected goals
+
+- Advanced shot mapping
+
+## Set-up: 
+
+\scriptsize
+
+NHL shot data
+
+```{r}
+library(RCurl); library(tidyverse)
+githubURL <- "https://raw.githubusercontent.com/statsbylopez/StatsSports/master/Data/pbp_data_hockey.rds"
+pbp_data <- readRDS(gzcon(url(githubURL)))
+names(pbp_data)
+```
+
+## Adjusted coordinates
+
+\scriptsize
+
+```{r}
+pbp_data <- pbp_data %>% 
+  mutate(coords_x_adj = ifelse(event_team == home_team, 
+                               -1*abs(coords_x), abs(coords_x)), 
+         coords_y_adj = ifelse(event_team == home_team & coords_x < 0, 
+                               coords_y, -1*coords_y), 
+         coords_y_adj = ifelse(event_team == away_team & coords_x > 0, 
+                               coords_y, -1*coords_y))
+
+```
+
+
+## Player metrics
+
+\footnotesize
+
+```{r}
+season_2018 <- pbp_data %>% 
+  filter(season == 20172018) %>% 
+  group_by(event_player_1, season) %>% 
+  summarise(n_goals_18 = sum(event_type == "GOAL"), 
+            n_xGs_18 = sum(shot_prob), 
+            n_shots_18 = n()) %>% 
+  filter(n_shots_18 >= 100) %>% 
+  select(-season)
+
+season_2019 <- pbp_data %>% 
+  filter(season == 20182019) %>% 
+  group_by(event_player_1, season) %>% 
+  summarise(n_goals_19 = sum(event_type == "GOAL"), 
+            n_xGs_19 = sum(shot_prob), 
+            n_shots_19 = n()) %>% 
+  filter(n_shots_19 >= 100) %>% 
+  select(-season)
+```
+
+## Player metrics
+
+\scriptsize
+
+```{r}
+season_combine <- season_2018 %>% inner_join(season_2019)
+head(season_combine)
+library(corrplot)
+```
+
+## Player metrics
+
+```{r, fig.width = 3.5, fig.height = 3.2}
+cor_players <- cor(season_combine[,2:7])
+corrplot(cor_players, method = "number")
+```
+
+## Player metrics, conclusions
+
+
+
+## Score effects
+
+\footnotesize
+
+```{r}
+pbp_data <- pbp_data %>% 
+  mutate(score_diff = ifelse(event_team == home_team, 
+                             home_score - away_score, 
+                             away_score - home_score), 
+         score_diff_cat = case_when(score_diff <= -1 ~ "Down", 
+                                    score_diff == 0 ~ "Tied", 
+                                    score_diff >= 1 ~ "Up"), 
+         is_goal = event_type == "GOAL")
+
+pbp_data %>% 
+  group_by(score_diff_cat) %>% 
+  summarise(ave_goal = mean(is_goal), 
+            ave_distance = mean(event_distance, na.rm = TRUE), 
+            ave_Xg = mean(shot_prob))
+```
+
+## Score effects, conclusions
+
+## Soccer data
+
+
+\scriptsize
+
+```{r}
+library(RCurl)
+library(tidyverse)
+url <- getURL("https://raw.githubusercontent.com/statsbylopez/StatsSports/master/Data/sb_shot_data.csv")
+wwc_shot <- read.csv(text = url)
+names(wwc_shot)
+```
+
+## Soccer data
+
+
+\scriptsize
+
+```{r}
+wwc_shot_summary <- wwc_shot %>% 
+  group_by(match_id, possession_team.name) %>% 
+  summarise(n_goals = sum(shot.outcome.name == "Goal"))
+wwc_shot_summary %>% 
+  head()
+```
+
+
+
+## Expected goals/link to future
+
+Summarize: *Expected goals 2.0* [http://www.11tegen11.com/2014/08/07/expected-goals-2-0-some-light-in-the-black-box/](http://www.11tegen11.com/2014/08/07/expected-goals-2-0-some-light-in-the-black-box/)
+
+Summarize: *Best predictor of future performance is expected goals* [http://11tegen11.net/2015/01/05/the-best-predictor-for-future-performance-is-expected-goals/](http://11tegen11.net/2015/01/05/the-best-predictor-for-future-performance-is-expected-goals/)
+
+
+
+## Expected goals, repeatability of finishing skill
+
+Summarize: *Repeatability of finishing skill* [https://statsbomb.com/2017/07/quantifying-finishing-skill/](https://statsbomb.com/2017/07/quantifying-finishing-skill/)
+
+
+
+## Randomness and expected goals
+
+Summarize: *12 shots good, 2 shots better* [(http://thepowerofgoals.blogspot.com/2014/02/twelve-shots-good-two-shots-better.html)](http://thepowerofgoals.blogspot.com/2014/02/twelve-shots-good-two-shots-better.html)
+
+
+## Expected goals and addition
+
+Summarize: *Expected goals don't add*
+[https://medium.com/@dannypage/expected-goals-just-don-t-add-up-they-also-multiply-1dfd9b52c7d0](https://medium.com/@dannypage/expected-goals-just-don-t-add-up-they-also-multiply-1dfd9b52c7d0)
