@@ -1,0 +1,211 @@
+---
+title: 'Lecture 11: Power rankings'
+author: "Skidmore College, MA 251"
+output: beamer_presentation
+fontsize: 10pt
+---
+
+```{r knitr_options , include=FALSE}
+#Here's some preamble, which makes ensures your figures aren't too big
+knitr::opts_chunk$set(fig.width=6, fig.height=4.6, warning=FALSE,
+message=FALSE)
+```
+
+## Goals
+
+- Power rankings in sports
+
+- Models for paired comparisons
+
+- Tools: Elo, Bradley-Terry
+
+
+
+## Set-up: 
+
+Let's rank NBA Western Conference teams at the end of the 2019 regular season. Judging criteria: Who would win a game played tomorrow on a neutral site?
+
+Rank         Team
+-----       ------ 
+1             Golden State
+2             Houston
+3             OKC? Utah?
+
+
+
+## Paired comparisons
+
+In a league with $n_t$ number of teams, there are $n_t$! possible allocations of power rankings. Ultimately, each rank comes down to a set of decisions called **paired comparisons**, where each player or team is compared to another player or team.
+
+Ex: If $P(OKC \textgreater Utah) > 0.5$, then OKC ranks 3 (assuming OKC also better than all other teams besides Golden State, Houston.)
+
+*Note*: $P(OKC \textgreater Utah) > 0.5$ is the probability of Oklahoma City beating Utah
+
+What assumptions are we making in doing several paired comparisons?
+
+## Idea of paired comparisons
+
+One participant versus another (see more [here](http://www.heatherturner.net/talks.html#BradleyTerry2talk)):
+
+1. Players, teams in sport
+2. Consumer products in market research
+3. Images in psychology
+
+Most common paired comparison model: **Bradley-Terry (BTM)**
+
+
+## Notation, BTM
+
+- Players (or teams) $i$ and $j$
+- Assume $P(i \text{ beats } j)$ = $\frac{\alpha_i}{\alpha_i + \alpha_j}$
+- $\alpha_i$ and $\alpha_j$ reflect player **abilities** for $i$ and $j$, respectively
+    -  $\alpha_i$ > 0 and $\alpha_j$ > 0
+- Odds ($i$ beats $j$) = $\frac{P(i \text{ beats } j)}{P(j \text{ beats } i)} = \frac{\alpha_i/(\alpha_i + \alpha_j)}{\alpha_j/(\alpha_i + \alpha_j)} = \frac{\alpha_i}{\alpha_j}$
+
+## Example, BTM: 
+
+Rank         Team                   $\alpha$
+-----       ------                  ------
+1             Golden State          5.3
+2             Houston               4.7
+3             OKC                   2.9
+
+Estimate 
+
+1. P(Golden State > OKC) 
+2. Odds(Golden State > OKC)
+3. P(Houston > Golden State)
+4. Odds(Houston > Golden State)
+
+
+
+
+## Notation, BTM
+
+- logit($P(i \text{ beats } j)$) = log(Odds ($i$ beats $j$)) = log($\alpha_i$) - log($\alpha_j$) = $\lambda_i$ - $\lambda_j$
+    - $\lambda_i = log(\alpha_i)$ for all  $i$
+    - $\alpha_i = e^{\lambda_i}$ for all $i$
+
+
+## Example, BTM: 
+
+Rank         Team                   $\lambda$
+-----       ------                  ------
+1             Skidmore              1.2
+2             Vassar                 0
+3             RIT                   -0.9
+
+Questions 
+
+1. P(Skidmore > RIT) 
+
+2. What does it mean to have a $\lambda$ of 0? 
+
+
+## How to find BTM parameter estimates?
+
+\footnotesize
+
+
+```{r, warning = FALSE, message = FALSE}
+library(BradleyTerry2); library(tidyverse)
+data("baseball", package = "BradleyTerry2")
+head(baseball)
+```
+
+## The model
+
+\footnotesize
+
+
+```{r}
+baseballModel1 <- BTm(cbind(home.wins, away.wins), home.team, away.team,
+  data = baseball, id = "team")
+library(broom)
+tidy(baseballModel1)
+```
+
+Where's Baltimore?
+
+
+## Next steps
+
+\footnotesize
+
+
+```{r}
+BTabilities(baseballModel1)
+```
+
+## Next steps
+
+\footnotesize
+
+
+```{r}
+exp(BTabilities(baseballModel1))
+```
+
+Find estimated probability that (i) Boston defeats Cleveland and (ii) Baltimore defeats Boston
+
+
+## Home field advantage
+
+\footnotesize
+
+```{r}
+baseball$home.team <- data.frame(team = baseball$home.team, at.home = 1)
+baseball$away.team <- data.frame(team = baseball$away.team, at.home = 0)
+baseballModel2 <- update(baseballModel1, formula = ~ team + at.home)
+tidy(baseballModel2)
+```
+
+
+
+##  Compare the fit of these two models:
+
+\footnotesize
+
+
+```{r}
+AIC(baseballModel1)
+AIC(baseballModel2)
+exp(baseballModel2$coeff)
+```
+
+Interpret the effect of HFA in baseball. 
+
+
+## Challenges and final thoughts
+
+- Importance of data formatting for BTM
+- Links to Elo
+    - $\alpha_i  = e^{S_i/k}$
+    - $k$ a sport-specific scale factor 
+    - $S_i$ another team-level skill factor
+    - Iterative process (can update after a game)
+- Similarity to [other systems](http://angrystatistician.blogspot.com/2013/03/baseball-chess-psychology-and.html) (log 5, item-response) 
+
+## Fun
+
+```{r}
+df.predict <- data.frame(exp(BTabilities(baseballModel2)))
+df.predict$Team <- rownames(df.predict)
+boston_probs <- df.predict %>%
+      filter(Team != "Boston") %>%
+      mutate(p_boston = exp(3.03)/(exp(3.03) + exp(ability)))
+
+p <- ggplot(boston_probs, aes(x = Team, y = p_boston)) + 
+  geom_col() +
+  ylab("Probability") + theme_bw() +
+  geom_hline(aes(yintercept = 0.5), color = "red") +
+  ggtitle("Probability of Boston Beating Other Opponents")
+```
+
+## Fun
+
+```{r echo = FALSE}
+p
+```
+
+
